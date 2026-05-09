@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    alias(libs.plugins.spring.boot)
+}
+
+group = 'com.github.dimitryivaniuta.gateway'
+version = '1.0.0'
+description = 'Real-Time Top-K Leaderboard Service using Kafka, Redis Sorted Sets, PostgreSQL snapshots, R2DBC, Flyway and WebFlux.'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencies {
+    implementation platform(libs.spring.boot.bom)
+
+    implementation libs.spring.boot.starter.actuator
+    implementation libs.spring.boot.starter.validation
+    implementation libs.spring.boot.starter.webflux
+    implementation libs.spring.boot.starter.data.redis.reactive
+    implementation libs.spring.boot.starter.data.r2dbc
+    implementation libs.spring.kafka
+    implementation libs.flyway.core
+    implementation libs.flyway.database.postgresql
+    implementation libs.r2dbc.postgresql
+    implementation libs.postgresql
+    implementation libs.micrometer.prometheus
+    implementation libs.commons.pool2
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.reactor.test
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.testcontainers.junit.jupiter
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.kafka
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-parameters']
+}
+
+tasks.named('javadoc') {
+    options.encoding = 'UTF-8'
+    options.addStringOption('Xdoclint:all,-missing', '')
+}
