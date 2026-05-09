@@ -1,0 +1,16 @@
+spring:
+  main:
+    web-application-type: reactive
+  flyway:
+    enabled: false
+  kafka:
+    listener:
+      auto-startup: false
+leaderboard:
+  kafka-topic: leaderboard.score-events
+  default-leaderboard-id: global
+  redis-key-prefix: test-rtlb
+  max-limit: 100
+  cache-warmup-limit: 1000
+  http-event-publishing-enabled: true
+  kafka-processing-timeout: 2s
