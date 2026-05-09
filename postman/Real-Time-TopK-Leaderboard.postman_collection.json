@@ -1,0 +1,144 @@
+{
+  "info": {
+    "name": "Real-Time Top-K Leaderboard",
+    "description": "Smoke tests for Kafka-published score events, durable idempotency, and Top-K leaderboard reads.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "leaderboardId",
+      "value": "global"
+    },
+    {
+      "key": "duplicateEventId",
+      "value": "postman-duplicate-event-1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/actuator/health"
+      }
+    },
+    {
+      "name": "Publish score event - Alice +25",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{duplicateEventId}}\",\n  \"leaderboardId\": \"{{leaderboardId}}\",\n  \"itemId\": \"player-1\",\n  \"displayName\": \"Alice\",\n  \"delta\": 25\n}"
+        },
+        "url": "{{baseUrl}}/leaderboard/events"
+      }
+    },
+    {
+      "name": "Publish duplicate score event - Alice +25 same eventId",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{duplicateEventId}}\",\n  \"leaderboardId\": \"{{leaderboardId}}\",\n  \"itemId\": \"player-1\",\n  \"displayName\": \"Alice\",\n  \"delta\": 25\n}"
+        },
+        "url": "{{baseUrl}}/leaderboard/events"
+      }
+    },
+    {
+      "name": "Publish score event - Bob +40",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"leaderboardId\": \"{{leaderboardId}}\",\n  \"itemId\": \"player-2\",\n  \"displayName\": \"Bob\",\n  \"delta\": 40\n}"
+        },
+        "url": "{{baseUrl}}/leaderboard/events"
+      }
+    },
+    {
+      "name": "Publish absolute score - Carol 100",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"leaderboardId\": \"{{leaderboardId}}\",\n  \"itemId\": \"player-3\",\n  \"displayName\": \"Carol\",\n  \"absoluteScore\": 100\n}"
+        },
+        "url": "{{baseUrl}}/leaderboard/events"
+      }
+    },
+    {
+      "name": "Get Top 100",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('items is an array', function () { pm.expect(pm.response.json().items).to.be.an('array'); });",
+              "pm.test('limit is 100', function () { pm.expect(pm.response.json().limit).to.eql(100); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/leaderboard?leaderboardId={{leaderboardId}}&limit=100"
+      }
+    },
+    {
+      "name": "Get Top 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('max 2 items', function () { pm.expect(pm.response.json().items.length).to.be.at.most(2); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/leaderboard?leaderboardId={{leaderboardId}}&limit=2"
+      }
+    },
+    {
+      "name": "Prometheus metrics",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/actuator/prometheus"
+      }
+    }
+  ]
+}
