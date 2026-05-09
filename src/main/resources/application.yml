@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: real-time-topk-leaderboard-service
+  main:
+    web-application-type: reactive
+  threads:
+    virtual:
+      enabled: true
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/leaderboard
+    username: leaderboard
+    password: leaderboard
+    pool:
+      enabled: true
+      initial-size: 8
+      max-size: 50
+      max-idle-time: 30m
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/leaderboard
+    user: leaderboard
+    password: leaderboard
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2s
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 128
+          max-idle: 32
+          min-idle: 8
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: leaderboard-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.github.dimitryivaniuta.gateway.leaderboard.domain,java.util,java.lang
+        spring.json.value.default.type: com.github.dimitryivaniuta.gateway.leaderboard.domain.ScoreEvent
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 10
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        linger.ms: 5
+        batch.size: 32768
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 4
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+leaderboard:
+  kafka-topic: leaderboard.score-events
+  default-leaderboard-id: global
+  redis-key-prefix: rtlb
+  max-limit: 500
+  cache-warmup-limit: 10000
+  cache-warmup-leaderboard-limit: 100
+  http-event-publishing-enabled: true
+  kafka-processing-timeout: 5s
+  kafka-dead-letter-suffix: .DLT
+  kafka-max-retry-attempts: 5
+
+logging:
+  level:
+    root: INFO
+    com.github.dimitryivaniuta.gateway.leaderboard: INFO
